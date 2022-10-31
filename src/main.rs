@@ -3,7 +3,7 @@ use std::{io, path::PathBuf, str};
 use db::Store;
 use serde::Deserialize;
 use structopt::StructOpt;
-use utils::{read_file_to_string, read_toml};
+use utils::{find_db_path_or_default, read_file_to_string, read_toml};
 
 mod db;
 mod utils;
@@ -21,7 +21,7 @@ struct CliOptions {
     #[structopt(long)]
     pub config: Option<String>,
     #[structopt(long)]
-    pub db_path: Option<String>,
+    pub db_path: Option<PathBuf>,
     #[structopt(long)]
     pub port: Option<u16>,
 }
@@ -30,6 +30,15 @@ struct CliOptions {
 pub struct Config {
     pub db_path: PathBuf,
     pub port: u16,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            db_path: find_db_path_or_default(),
+            port: Default::default(),
+        }
+    }
 }
 
 impl CliOptions {
@@ -42,7 +51,11 @@ impl CliOptions {
             None => todo!(),
         };
 
-        todo!()
+        config.port = self.port.unwrap_or(5000);
+
+        config.db_path = self.db_path.clone().unwrap_or_default();
+
+        Ok(config)
     }
 }
 
