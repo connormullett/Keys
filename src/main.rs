@@ -1,5 +1,6 @@
-use std::{io, path::PathBuf};
+use std::{io, path::PathBuf, str};
 
+use db::Store;
 use structopt::StructOpt;
 
 mod db;
@@ -9,7 +10,7 @@ struct Cli {
     #[structopt(flatten)]
     pub options: CliOptions,
     #[structopt(subcommand)]
-    pub command: Subcommand,
+    pub command: Command,
 }
 
 #[derive(Debug, StructOpt)]
@@ -19,7 +20,7 @@ struct CliOptions {
     #[structopt(long)]
     pub db_path: Option<String>,
     #[structopt(long)]
-    pub port: u16,
+    pub port: Option<u16>,
 }
 
 pub struct Config {
@@ -35,15 +36,29 @@ impl CliOptions {
 
 #[derive(StructOpt)]
 #[structopt(setting = structopt::clap::AppSettings::VersionlessSubcommands)]
-
-pub enum Subcommand {
-    Get,
-    Put,
-    Delete,
+pub enum Command {
+    Get { key: String },
+    Put { key: String, value: String },
+    Delete { key: String },
 }
 
-impl Subcommand {
-    pub fn run(&self, config: Config) {}
+impl Command {
+    pub fn run(&self, db: Store) {
+        match &self {
+            Command::Get { key } => {
+                let res = db.get(key).expect("fixme");
+                match res {
+                    Some(value) => {
+                        let value = str::from_utf8(&value).expect("FIXME");
+                        println!("{value}");
+                    }
+                    None => println!("NULL"),
+                }
+            }
+            Command::Put { key, value } => todo!(),
+            Command::Delete { key } => todo!(),
+        }
+    }
 }
 
 fn main() {
@@ -53,5 +68,5 @@ fn main() {
         .build_config()
         .expect("FIXME: Config parsing failed");
 
-    command.run(config);
+    let db = db::Store::open_default(config.db_path.clone()).expect("FIXME: db failed to open");
 }
