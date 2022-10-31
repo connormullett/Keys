@@ -49,14 +49,20 @@ impl Command {
                 let res = db.get(key).expect("fixme");
                 match res {
                     Some(value) => {
-                        let value = str::from_utf8(&value).expect("FIXME");
+                        let value = str::from_utf8(&value).expect("fixme");
                         println!("{value}");
                     }
                     None => println!("NULL"),
                 }
             }
-            Command::Put { key, value } => todo!(),
-            Command::Delete { key } => todo!(),
+            Command::Put { key, value } => match db.put(key, value) {
+                Ok(_) => println!("Success"),
+                Err(e) => println!("Put request failed :: {}", e.to_string()),
+            },
+            Command::Delete { key } => match db.delete(key) {
+                Ok(_) => println!("Success"),
+                Err(e) => println!("Delete request failed :: {}", e.to_string()),
+            },
         }
     }
 }
@@ -69,4 +75,6 @@ fn main() {
         .expect("FIXME: Config parsing failed");
 
     let db = db::Store::open_default(config.db_path.clone()).expect("FIXME: db failed to open");
+
+    command.run(db)
 }
