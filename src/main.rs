@@ -1,9 +1,12 @@
 use std::{io, path::PathBuf, str};
 
 use db::Store;
+use serde::Deserialize;
 use structopt::StructOpt;
+use utils::{read_file_to_string, read_toml};
 
 mod db;
+mod utils;
 
 #[derive(StructOpt)]
 struct Cli {
@@ -23,6 +26,7 @@ struct CliOptions {
     pub port: Option<u16>,
 }
 
+#[derive(Debug, Deserialize)]
 pub struct Config {
     pub db_path: PathBuf,
     pub port: u16,
@@ -30,6 +34,14 @@ pub struct Config {
 
 impl CliOptions {
     pub fn build_config(&self) -> Result<Config, io::Error> {
+        let mut config: Config = match &self.config {
+            Some(config_file) => {
+                let toml = read_file_to_string(&PathBuf::from(&config_file))?;
+                read_toml(&toml)?
+            }
+            None => todo!(),
+        };
+
         todo!()
     }
 }
