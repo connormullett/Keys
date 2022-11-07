@@ -90,6 +90,7 @@ pub fn set_sigint_handler() -> Receiver<()> {
                 ctrlc_send.send(()).expect("Error sending ctrl-c message");
             }
         } else {
+            println!("exiting");
             process::exit(0);
         }
     })

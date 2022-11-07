@@ -39,7 +39,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             data_dir: init_default_data_dir(),
-            port: Default::default(),
+            port: 5000,
         }
     }
 }
@@ -101,15 +101,16 @@ async fn start(config: Arc<Config>, db: Arc<Store>) {
     let mut services = vec![];
 
     let http_server_config = Arc::clone(&config);
-    let http_service =
-        tokio::task::spawn(async move { http::start_server(&http_server_config, db).await });
+    let http_service = tokio::task::spawn(async move {
+        http::start_server(&http_server_config, db).await;
+    });
     services.push(http_service);
+
+    ctrlc_oneshot.await.unwrap();
 
     for handle in services {
         handle.abort();
     }
-
-    ctrlc_oneshot.await.unwrap();
 }
 
 #[tokio::main]
