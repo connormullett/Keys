@@ -3,7 +3,7 @@ use std::{io, path::PathBuf, str};
 use db::Store;
 use serde::Deserialize;
 use structopt::StructOpt;
-use utils::{find_db_path_or_default, read_file_to_string, read_toml};
+use utils::{find_default_config, init_default_data_dir, read_file_to_string, read_toml};
 
 mod db;
 mod utils;
@@ -28,14 +28,14 @@ struct CliOptions {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub db_path: PathBuf,
+    pub data_dir: PathBuf,
     pub port: u16,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            db_path: find_db_path_or_default(),
+            data_dir: init_default_data_dir(),
             port: Default::default(),
         }
     }
@@ -48,12 +48,12 @@ impl CliOptions {
                 let toml = read_file_to_string(&PathBuf::from(&config_file))?;
                 read_toml(&toml)?
             }
-            None => todo!(),
+            None => find_default_config().unwrap_or_default(),
         };
 
         config.port = self.port.unwrap_or(5000);
 
-        config.db_path = self.db_path.clone().unwrap_or_default();
+        config.data_dir = self.db_path.clone().unwrap_or(init_default_data_dir());
 
         Ok(config)
     }
@@ -99,7 +99,7 @@ fn main() {
         .build_config()
         .expect("FIXME: Config parsing failed");
 
-    let db = db::Store::open_default(config.db_path.clone()).expect("FIXME: db failed to open");
+    let db = db::Store::open_default(config.data_dir.clone()).expect("FIXME: db failed to open");
 
     command.run(db)
 }
