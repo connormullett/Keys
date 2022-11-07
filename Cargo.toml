@@ -12,3 +12,7 @@ structopt = "0.3.26"
 toml = "0.5"
 serde = { version = "1", features = ["derive"] }
 dirs = "4.0.0"
+tokio = { version = "1", features = ["full"] }
+hyper = "0.14.22"
+futures = "0.3.25"
+ctrlc = "3.2.3"

@@ -1,11 +1,14 @@
-use std::{io, path::PathBuf, str};
+use std::{io, path::PathBuf, str, sync::Arc};
 
 use db::Store;
 use serde::Deserialize;
 use structopt::StructOpt;
-use utils::{find_default_config, init_default_data_dir, read_file_to_string, read_toml};
+use utils::{
+    find_default_config, init_default_data_dir, read_file_to_string, read_toml, set_sigint_handler,
+};
 
 mod db;
+mod http;
 mod utils;
 
 #[derive(StructOpt)]
@@ -13,7 +16,7 @@ struct Cli {
     #[structopt(flatten)]
     pub options: CliOptions,
     #[structopt(subcommand)]
-    pub command: Command,
+    pub command: Option<Command>,
 }
 
 #[derive(Debug, StructOpt)]
@@ -68,7 +71,7 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn run(&self, db: Store) {
+    pub fn run(&self, db: Arc<Store>) {
         match &self {
             Command::Get { key } => {
                 let res = db.get(key).expect("fixme");
@@ -92,14 +95,40 @@ impl Command {
     }
 }
 
-fn main() {
+async fn start(config: Arc<Config>, db: Arc<Store>) {
+    let ctrlc_oneshot = set_sigint_handler();
+
+    let mut services = vec![];
+
+    let http_server_config = Arc::clone(&config);
+    let http_service =
+        tokio::task::spawn(async move { http::start_server(&http_server_config, db).await });
+    services.push(http_service);
+
+    for handle in services {
+        handle.abort();
+    }
+
+    ctrlc_oneshot.await.unwrap();
+}
+
+#[tokio::main]
+async fn main() {
     let Cli { options, command } = Cli::from_args();
 
-    let config = options
-        .build_config()
-        .expect("FIXME: Config parsing failed");
+    let config = Arc::new(
+        options
+            .build_config()
+            .expect("FIXME: Config parsing failed"),
+    );
 
-    let db = db::Store::open_default(config.data_dir.clone()).expect("FIXME: db failed to open");
+    let db = Arc::new(
+        db::Store::open_default(config.data_dir.clone()).expect("FIXME: db failed to open"),
+    );
 
-    command.run(db)
+    // Run a command or start the server
+    match command {
+        Some(command) => command.run(db),
+        None => start(config, db).await,
+    }
 }

@@ -1,10 +1,17 @@
 use std::{
+    cell::RefCell,
     fs::{self, File},
     io::{Read, Result},
     path::{Path, PathBuf},
+    process,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
 };
 
 use dirs::config_dir;
+use futures::channel::oneshot::Receiver;
 
 use crate::Config;
 
@@ -68,4 +75,25 @@ pub fn init_default_data_dir() -> PathBuf {
         fs::create_dir_all(data_path).expect("FIXME: Failed to create data dir");
     }
     dir
+}
+
+pub fn set_sigint_handler() -> Receiver<()> {
+    let (ctrlc_send, ctrlc_oneshot) = futures::channel::oneshot::channel();
+    let ctrlc_send_c = RefCell::new(Some(ctrlc_send));
+
+    let running = Arc::new(AtomicUsize::new(0));
+    ctrlc::set_handler(move || {
+        let prev = running.fetch_add(1, Ordering::SeqCst);
+        if prev == 0 {
+            // Send sig int in channel to blocking task
+            if let Some(ctrlc_send) = ctrlc_send_c.try_borrow_mut().unwrap().take() {
+                ctrlc_send.send(()).expect("Error sending ctrl-c message");
+            }
+        } else {
+            process::exit(0);
+        }
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    ctrlc_oneshot
 }
