@@ -18,7 +18,7 @@ struct ServerContext {
 fn http_get(context: ServerContext, key: String) -> String {
     match context.db.get(key) {
         Ok(value) => {
-            let value = value.unwrap_or(vec![]);
+            let value = value.unwrap_or_default();
             str::from_utf8(&value).expect("fixme").to_string()
         }
         Err(_) => String::from("(nil)"),
@@ -29,7 +29,7 @@ async fn handle(context: ServerContext, req: Request<Body>) -> Result<Response<B
     let (parts, _body) = req.into_parts();
     match parts.method {
         Method::GET => {
-            let key = parts.uri.path().split("/").last().unwrap();
+            let key = parts.uri.path().split('/').last().unwrap();
             let value = http_get(context, key.to_owned());
             Ok(Response::new(Body::from(value)))
         }

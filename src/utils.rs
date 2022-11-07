@@ -47,7 +47,7 @@ fn read_config_or_none(path: PathBuf) -> Option<Config> {
         Err(e) => {
             println!(
                 "Cant read configuration file, using defaults. Error was {}",
-                e.to_string()
+                e
             );
             return None;
         }
@@ -58,7 +58,7 @@ fn read_config_or_none(path: PathBuf) -> Option<Config> {
         Err(e) => {
             println!(
                 "Cant read configuration file, using defaults. Error was {}",
-                e.to_string()
+                e
             );
             None
         }

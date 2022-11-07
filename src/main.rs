@@ -56,7 +56,7 @@ impl CliOptions {
 
         config.port = self.port.unwrap_or(5000);
 
-        config.data_dir = self.db_path.clone().unwrap_or(init_default_data_dir());
+        config.data_dir = self.db_path.clone().unwrap_or_else(init_default_data_dir);
 
         Ok(config)
     }
@@ -85,11 +85,11 @@ impl Command {
             }
             Command::Put { key, value } => match db.put(key, value) {
                 Ok(_) => println!("Success"),
-                Err(e) => println!("Put request failed :: {}", e.to_string()),
+                Err(e) => println!("Put request failed :: {}", e),
             },
             Command::Delete { key } => match db.delete(key) {
                 Ok(_) => println!("Success"),
-                Err(e) => println!("Delete request failed :: {}", e.to_string()),
+                Err(e) => println!("Delete request failed :: {}", e),
             },
         }
     }
