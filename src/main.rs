@@ -3,11 +3,13 @@ use std::{io, path::PathBuf, str, sync::Arc};
 use db::Store;
 use serde::Deserialize;
 use structopt::StructOpt;
+use tokio::task::JoinHandle;
 use utils::{
     find_default_config, init_default_data_dir, read_file_to_string, read_toml, set_sigint_handler,
 };
 
 mod db;
+#[cfg(feature = "http-server")]
 mod http;
 mod utils;
 
@@ -95,15 +97,15 @@ impl Command {
     }
 }
 
+#[allow(unused)]
 async fn start(config: Arc<Config>, db: Arc<Store>) {
     let ctrlc_oneshot = set_sigint_handler();
 
-    let mut services = vec![];
+    let mut services: Vec<JoinHandle<()>> = vec![];
 
-    let http_server_config = Arc::clone(&config);
-    let http_service = tokio::task::spawn(async move {
-        http::start_server(&http_server_config, db).await;
-    });
+    #[cfg(feature = "http-server")]
+    let http_service = http::start_server(config, db).await;
+    #[cfg(feature = "http-server")]
     services.push(http_service);
 
     ctrlc_oneshot.await.unwrap();

@@ -1,12 +1,12 @@
 use std::net::SocketAddr;
 use std::str;
 use std::{convert::Infallible, sync::Arc};
+use tokio::task::JoinHandle;
 
 use hyper::{
     service::{make_service_fn, service_fn},
-    Body, Request, Response,
+    Body, Request, Response, {Method, Server},
 };
-use hyper::{Method, Server};
 
 use crate::{db::Store, Config};
 
@@ -40,7 +40,14 @@ async fn handle(context: ServerContext, req: Request<Body>) -> Result<Response<B
     }
 }
 
-pub async fn start_server(config: &Config, db: Arc<Store>) {
+pub async fn start_server(config: Arc<Config>, db: Arc<Store>) -> JoinHandle<()> {
+    let http_server_config = Arc::clone(&config);
+    tokio::task::spawn(async move {
+        run_server(&http_server_config, db).await;
+    })
+}
+
+async fn run_server(config: &Config, db: Arc<Store>) {
     println!("starting http server..");
 
     let context = ServerContext { db };

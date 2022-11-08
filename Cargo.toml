@@ -15,4 +15,9 @@ dirs = "4.0.0"
 tokio = { version = "1", features = ["full"] }
 futures = "0.3.25"
 ctrlc = "3.2.3"
-hyper = { version = "0.14.22", features = ["full"] }
+hyper = { version = "0.14.22", features = ["full"], optional = true }
+
+[features]
+default = ["http-server", "rpc"]
+http-server = ["dep:hyper"]
+rpc = []
