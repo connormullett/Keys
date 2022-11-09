@@ -11,6 +11,8 @@ use utils::{
 mod db;
 #[cfg(feature = "http-server")]
 mod http;
+#[cfg(feature = "rpc")]
+mod rpc;
 mod utils;
 
 #[derive(StructOpt)]

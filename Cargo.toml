@@ -12,12 +12,13 @@ structopt = "0.3.26"
 toml = "0.5"
 serde = { version = "1", features = ["derive"] }
 dirs = "4.0.0"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures = "0.3.25"
 ctrlc = "3.2.3"
 hyper = { version = "0.14.22", features = ["full"], optional = true }
+tarpc = { version = "0.29", features = ["tokio1"], optional = true }
 
 [features]
 default = ["http-server", "rpc"]
 http-server = ["dep:hyper"]
-rpc = []
+rpc = ["dep:tarpc"]
