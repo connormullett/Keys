@@ -9,6 +9,8 @@ use crate::db::Store;
 #[tarpc::service]
 trait StoreService {
     async fn get(key: String) -> String;
+    async fn put(key: String, value: String) -> String;
+    async fn delete(key: String) -> String;
 }
 
 #[derive(Clone)]
@@ -25,6 +27,26 @@ impl StoreService for StoreServer {
                 Some(val) => str::from_utf8(&val).expect("fixme").to_string(),
                 None => String::from("(nil)"),
             },
+            Err(e) => e.to_string(),
+        };
+        future::ready(value)
+    }
+
+    type PutFut = Ready<String>;
+
+    fn put(self, _: context::Context, key: String, value: String) -> Self::PutFut {
+        let value = match self.db.put(key, value) {
+            Ok(_) => "OK".to_string(),
+            Err(e) => e.to_string(),
+        };
+        future::ready(value)
+    }
+
+    type DeleteFut = Ready<String>;
+
+    fn delete(self, _: context::Context, key: String) -> Self::DeleteFut {
+        let value = match self.db.delete(key) {
+            Ok(_) => "OK".to_string(),
             Err(e) => e.to_string(),
         };
         future::ready(value)
